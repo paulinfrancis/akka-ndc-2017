@@ -82,7 +82,32 @@ namespace AkkaWeb
 
             Func<IHubContextAccessor> getHubContextAccessor = () => app.ApplicationServices.GetService<IHubContextAccessor>();
 
-            DemoActorSystem.Create(getHubContextAccessor);
+            var config = ConfigurationFactory.ParseString(@"
+                akka {
+                    actor {
+                        provider = ""Akka.Remote.RemoteActorRefProvider, Akka.Remote""
+                        deployment = {
+                            /FibonacciActor/FibonacciSeriesActor {
+                                remote = ""akka.tcp://PiActorSystem@raspberrypi.local:8090""
+                            }
+                        }
+                        serializers {
+                            hyperion = ""Akka.Serialization.HyperionSerializer, Akka.Serialization.Hyperion""
+                        }
+                        serialization-bindings {
+                            ""System.Object"" = hyperion
+                        }
+                    }
+                    remote {
+                        helios.tcp {
+                            port = 0
+                            hostname = /* INSERT MACHINE NAME HERE */
+                        }
+                    }
+                }
+            ");
+
+            DemoActorSystem.Create(getHubContextAccessor, config);
         }
 
         private void OnShutdown()
